@@ -6,10 +6,9 @@ contract TimeBasedLending {
     address public borrower;
     uint256 public loanAmount;
     uint256 public borrowTime;
-    uint256 public interestRate = 5; // 5% annual interest
+    uint256 public interestRate = 5; 
     bool public isLoanActive;
 
-    // Lender deposits Ether into the contract
     function supply() external payable {
         require(!isLoanActive, "Loan already active");
         require(msg.value > 0, "Must send Ether");
@@ -18,7 +17,6 @@ contract TimeBasedLending {
         loanAmount = msg.value;
     }
 
-    // Borrower borrows the funds
     function borrow() external {
         require(!isLoanActive, "Loan already taken");
         require(loanAmount > 0, "No funds available");
@@ -30,27 +28,22 @@ contract TimeBasedLending {
         payable(borrower).transfer(loanAmount);
     }
 
-    // Borrower repays with interest based on time
     function repay() external payable {
         require(isLoanActive, "No active loan");
         require(msg.sender == borrower, "Only borrower can repay");
 
-        // Calculate interest based on time passed
         uint256 timePassed = block.timestamp - borrowTime;
         uint256 interest = (loanAmount * interestRate * timePassed) / (365 days * 100);
         uint256 totalDue = loanAmount + interest;
 
         require(msg.value >= totalDue, "Not enough to repay loan");
 
-        // Transfer total due to lender
         payable(lender).transfer(totalDue);
 
-        // Refund extra Ether if borrower overpaid
         if (msg.value > totalDue) {
             payable(msg.sender).transfer(msg.value - totalDue);
         }
 
-        // Reset state for future loans
         isLoanActive = false;
         loanAmount = 0;
         lender = address(0);
@@ -58,6 +51,5 @@ contract TimeBasedLending {
         borrowTime = 0;
     }
 
-    // Allow the contract to receive Ether
     receive() external payable {}
 }
